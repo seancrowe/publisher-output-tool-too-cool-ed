@@ -50,5 +50,5 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: build-artifacts-${{ matrix.os }}-${{ matrix.node-version }}
+          name: build-artifacts-${{ matrix.os }}-${{ needs.version-check.outputs.version }}
           path: ./dist/
