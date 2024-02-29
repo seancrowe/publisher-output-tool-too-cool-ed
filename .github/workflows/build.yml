@@ -1,0 +1,55 @@
+name: Node.js CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'package.json'
+
+jobs:
+  check-version-change:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.filter.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Check for version changes in package.json
+        id: filter
+        run: |
+          if git diff HEAD^ HEAD -- package.json | grep '"version":'; then
+            echo "::set-output name=changed::true"
+          else
+            echo "::set-output name=changed::false"
+          fi
+
+  build:
+    needs: check-version-change
+    if: needs.check-version-change.outputs.changed == 'true'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest]
+        node-version: ['21.6.2']
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+          
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install bun
+        run: npm install -g bun
+
+      - name: Run build
+        run: npm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: build-artifacts-${{ matrix.os }}-${{ matrix.node-version }}
+          path: ./dist/
