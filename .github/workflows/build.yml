@@ -8,24 +8,22 @@ on:
       - 'package.json'
 
 jobs:
-  check-version-change:
+  version-check:
     runs-on: ubuntu-latest
     outputs:
-      changed: ${{ steps.filter.outputs.changed }}
+      changed: ${{ steps.version_change.outputs.changed }}
     steps:
       - uses: actions/checkout@v2
-      - name: Check for version changes in package.json
-        id: filter
-        run: |
-          if git diff HEAD^ HEAD -- package.json | grep '"version":'; then
-            echo "changed=true" >> $GITHUB_OUTPUT
-          else
-            echo "changed=false" >> $GITHUB_OUTPUT
-          fi
+      
+      - name: Check for version changes
+        id: version_change
+        uses: EndBug/version-check@v2
+        with:
+          file: package.json
 
   build:
-    needs: check-version-change
-    if: needs.check-version-change.outputs.changed == 'true'
+    needs: version-check
+    if: needs.version-check.outputs.changed == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
